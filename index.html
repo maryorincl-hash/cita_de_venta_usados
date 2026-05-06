@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Citas de Venta — Usados 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F0F4F8; color: #1E293B; font-size: 14px; }
+
+    /* HEADER */
+    .header { background: #14532D; color: white; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .header-left h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; }
+    .header-left p { font-size: 0.78rem; opacity: 0.75; margin-top: 3px; }
+    .header-right { display: flex; gap: 12px; align-items: center; }
+    .tag { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); padding: 4px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; }
+    .tag.orange { background: #F97316; border-color: #F97316; }
+
+    /* LAYOUT */
+    .container { max-width: 1440px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* KPI GRID */
+    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+    .kpi-card { background: white; border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-top: 3px solid #14532D; position: relative; overflow: hidden; }
+    .kpi-card.accent { border-top-color: #F97316; }
+    .kpi-card.danger { border-top-color: #DC2626; }
+    .kpi-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; color: #64748B; }
+    .kpi-value { font-size: 2rem; font-weight: 900; color: #0F172A; margin: 8px 0 4px; line-height: 1; }
+    .kpi-value.accent { color: #F97316; }
+    .kpi-sub { font-size: 0.72rem; color: #94A3B8; }
+
+    /* INSIGHT BANNER */
+    .insight-banner { background: linear-gradient(135deg, #052e16 0%, #14532D 60%, #15803D 100%); color: white; border-radius: 12px; padding: 22px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .ib-text h2 { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; }
+    .ib-text p { font-size: 0.82rem; opacity: 0.82; line-height: 1.5; }
+    .ib-comparison { display: flex; align-items: center; gap: 20px; }
+    .ib-metric { text-align: center; }
+    .ib-metric-val { font-size: 2rem; font-weight: 900; }
+    .ib-metric-val.orange { color: #FDBA74; }
+    .ib-metric-label { font-size: 0.7rem; opacity: 0.75; margin-top: 3px; line-height: 1.4; }
+    .ib-arrow { font-size: 1.6rem; opacity: 0.5; }
+    .ib-multiplier { font-size: 4.5rem; font-weight: 900; color: #F97316; line-height: 1; text-shadow: 0 2px 12px rgba(249,115,22,0.4); }
+    .ib-multiplier span { font-size: 1.2rem; vertical-align: top; margin-top: 10px; display: inline-block; color: #FDBA74; }
+
+    /* GRID ROWS */
+    .row-2 { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+    .row-2b { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+    .row-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+
+    /* CARDS */
+    .card { background: white; border-radius: 10px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .card-title { font-size: 0.85rem; font-weight: 800; color: #0F172A; }
+    .card-subtitle { font-size: 0.72rem; color: #94A3B8; margin-top: 3px; margin-bottom: 18px; }
+
+    /* FUNNEL */
+    .funnel { display: flex; flex-direction: column; gap: 4px; }
+    .funnel-item { display: flex; align-items: center; gap: 14px; padding: 4px 0; }
+    .funnel-bar-track { flex: 1; height: 44px; background: #F8FAFC; border-radius: 7px; overflow: hidden; }
+    .funnel-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 14px; color: white; font-weight: 700; font-size: 0.82rem; border-radius: 7px; white-space: nowrap; overflow: hidden; }
+    .funnel-numbers { width: 110px; text-align: right; flex-shrink: 0; }
+    .fn-value { font-size: 1.3rem; font-weight: 900; color: #0F172A; }
+    .fn-pct { font-size: 0.7rem; color: #94A3B8; }
+    .funnel-connector { padding-left: 20px; }
+    .funnel-connector-line { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+    .fc-icon { color: #94A3B8; font-size: 0.85rem; }
+    .fc-text { font-size: 0.72rem; color: #64748B; font-weight: 600; }
+    .funnel-note { margin-top: 14px; background: #FFF7ED; border-left: 3px solid #F97316; border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 0.75rem; color: #7C2D12; }
+    .funnel-note strong { color: #EA580C; }
+
+    /* DONUT LEGEND */
+    .donut-wrap { position: relative; }
+    .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+    .donut-center-val { font-size: 1.6rem; font-weight: 900; color: #0F172A; line-height: 1; }
+    .donut-center-label { font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .legend-grid { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-name { flex: 1; color: #334155; }
+    .legend-pct { font-weight: 700; color: #0F172A; }
+
+    /* BRANCH TABLE */
+    .table-scroll { max-height: 360px; overflow-y: auto; margin-top: -4px; }
+    .table-scroll::-webkit-scrollbar { width: 5px; }
+    .table-scroll::-webkit-scrollbar-track { background: #F8FAFC; }
+    .table-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { position: sticky; top: 0; background: #F8FAFC; padding: 9px 12px; text-align: left; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em; color: #64748B; font-weight: 700; border-bottom: 2px solid #E2E8F0; z-index: 1; }
+    tbody td { padding: 8px 12px; border-bottom: 1px solid #F8FAFC; vertical-align: middle; }
+    tbody tr:hover td { background: #F8FAFC; }
+    .td-name { font-weight: 600; color: #1E293B; }
+    .td-num { color: #64748B; text-align: right; }
+    .td-pct { font-weight: 800; text-align: right; }
+    .mini-bar-wrap { width: 80px; background: #F1F5F9; border-radius: 4px; height: 7px; }
+    .mini-bar { height: 7px; border-radius: 4px; }
+    .chip { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.67rem; font-weight: 700; }
+    .chip-high { background: #DCFCE7; color: #15803D; }
+    .chip-med  { background: #FEF9C3; color: #854D0E; }
+    .chip-low  { background: #FEE2E2; color: #B91C1C; }
+
+    /* HOT CARS */
+    .hot-cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .hot-car { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .hot-car.hot { border-color: #F97316; background: #FFF7ED; }
+    .hc-left .patente { font-size: 1rem; font-weight: 900; font-family: 'Courier New', monospace; letter-spacing: 1px; color: #0F172A; text-transform: uppercase; }
+    .hc-left .auto-info { font-size: 0.72rem; color: #64748B; margin-top: 3px; }
+    .hc-badge { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; flex-shrink: 0; }
+    .hc-badge.normal { background: #DCFCE7; color: #14532D; }
+    .hc-badge.alert  { background: #F97316; color: white; }
+    .hot-note { margin-top: 14px; font-size: 0.75rem; color: #7C2D12; background: #FFF7ED; border-radius: 8px; padding: 8px 12px; border-left: 3px solid #F97316; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 20px; font-size: 0.72rem; color: #94A3B8; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Dashboard Citas de Venta — Autos Usados</h1>
+    <p>Canal digital (CHATBOT-IA + Web) &nbsp;·&nbsp; Enero – Mayo 2026</p>
+  </div>
+  <div class="header-right">
+    <span class="tag">Usados</span>
+    <span class="tag">Canal Digital</span>
+    <span class="tag orange">2026</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Leads Digitales</div>
+      <div class="kpi-value">19.193</div>
+      <div class="kpi-sub">CHATBOT-IA + Web</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Citas Creadas</div>
+      <div class="kpi-value">1.257</div>
+      <div class="kpi-sub">6,6% de leads totales</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">Ventas con Cita</div>
+      <div class="kpi-value accent">137</div>
+      <div class="kpi-sub">10,9% de citas generan venta</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">Citas Canceladas</div>
+      <div class="kpi-value">71%</div>
+      <div class="kpi-sub">Principal punto de fuga</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tasa Ácida Digital</div>
+      <div class="kpi-value">1,39%</div>
+      <div class="kpi-sub">Sin cita previa · base del canal</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">Tasa con Cita</div>
+      <div class="kpi-value accent">10,9%</div>
+      <div class="kpi-sub">×7,8 vs tasa ácida base</div>
+    </div>
+  </div>
+
+  <!-- INSIGHT BANNER -->
+  <div class="insight-banner">
+    <div class="ib-text">
+      <h2>La Cita de Venta como hito de calidad del lead</h2>
+      <p>Un lead que agenda una cita convierte a venta a una tasa 7,8 veces mayor<br>que el promedio del canal digital. La cita es el filtro que separa<br>el volumen de la oportunidad real.</p>
+    </div>
+    <div class="ib-comparison">
+      <div class="ib-metric">
+        <div class="ib-metric-val">1,39%</div>
+        <div class="ib-metric-label">Tasa ácida digital<br>(sin cita)</div>
+      </div>
+      <div class="ib-arrow">→</div>
+      <div class="ib-metric">
+        <div class="ib-metric-val orange">10,9%</div>
+        <div class="ib-metric-label">Conversión<br>(con cita)</div>
+      </div>
+    </div>
+    <div class="ib-multiplier"><span>×</span>7,8</div>
+  </div>
+
+  <!-- ROW: FUNNEL + MONTHLY -->
+  <div class="row-2">
+
+    <!-- FUNNEL -->
+    <div class="card">
+      <div class="card-title">Funnel Digital Completo</div>
+      <div class="card-subtitle">Lead → Cita de Venta → Venta Final</div>
+      <div class="funnel">
+
+        <div class="funnel-item">
+          <div class="funnel-bar-track">
+            <div class="funnel-bar-fill" style="width:100%; background:#14532D;">Leads digitales recibidos</div>
+          </div>
+          <div class="funnel-numbers">
+            <div class="fn-value">19.193</div>
+            <div class="fn-pct">100%</div>
+          </div>
+        </div>
+
+        <div class="funnel-connector">
+          <div class="funnel-connector-line">
+            <span class="fc-icon">▼</span>
+            <span class="fc-text">6,6% agendaron cita</span>
+          </div>
+        </div>
+
+        <div class="funnel-item">
+          <div class="funnel-bar-track">
+            <div class="funnel-bar-fill" style="width:72%; background:#1D7A4A;">Cita de Venta creada</div>
+          </div>
+          <div class="funnel-numbers">
+            <div class="fn-value">1.257</div>
+            <div class="fn-pct">6,6% de leads</div>
+          </div>
+        </div>
+
+        <div class="funnel-connector">
+          <div class="funnel-connector-line">
+            <span class="fc-icon">▼</span>
+            <span class="fc-text">14,2% completaron la cita</span>
+          </div>
+        </div>
+
+        <div class="funnel-item">
+          <div class="funnel-bar-track">
+            <div class="funnel-bar-fill" style="width:44%; background:#F97316;">Venta Final concretada</div>
+          </div>
+          <div class="funnel-numbers">
+            <div class="fn-value">137</div>
+            <div class="fn-pct">10,9% de citas</div>
+          </div>
+        </div>
+
+        <div class="funnel-note">
+          Solo el <strong>0,71%</strong> de los leads digitales terminan en venta a través del flujo con cita — escalar este hito es la palanca de crecimiento.
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY CHART -->
+    <div class="card">
+      <div class="card-title">Evolutivo Mensual — Citas con Venta</div>
+      <div class="card-subtitle">Volumen y tasa de conversión cita → venta · Ene–Abr 2026</div>
+      <canvas id="monthlyChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- ROW: DONUT + BRANCHES -->
+  <div class="row-2b">
+
+    <!-- ESTADOS DONUT -->
+    <div class="card">
+      <div class="card-title">Estado de las Citas</div>
+      <div class="card-subtitle">Distribución del total 2026</div>
+      <div class="donut-wrap">
+        <canvas id="statesChart" height="200"></canvas>
+        <div class="donut-center">
+          <div class="donut-center-val">1.257</div>
+          <div class="donut-center-label">citas</div>
+        </div>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-row"><span class="legend-dot" style="background:#DC2626"></span><span class="legend-name">Autocancelada</span><span class="legend-pct">42,1%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#F97316"></span><span class="legend-name">No asiste</span><span class="legend-pct">23,8%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#EAB308"></span><span class="legend-name">Cancelada</span><span class="legend-pct">13,3%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#94A3B8"></span><span class="legend-name">Reservado</span><span class="legend-pct">13,3%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#16A34A"></span><span class="legend-name">Completada</span><span class="legend-pct">7,4%</span></div>
+      </div>
+    </div>
+
+    <!-- BRANCH TABLE -->
+    <div class="card">
+      <div class="card-title">Conversión por Sucursal</div>
+      <div class="card-subtitle">% de citas que terminaron en venta · ordenado de mayor a menor · mín. 5 citas</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Sucursal</th>
+              <th style="text-align:right">Citas</th>
+              <th style="text-align:right">% Venta</th>
+              <th>Barra</th>
+              <th>Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="branchTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOT CARS -->
+  <div class="card">
+    <div class="card-title">Autos Mas Demandados — Alta frecuencia de citas por patente</div>
+    <div class="card-subtitle">Patentes con multiples citas agendadas · indicador de demanda concentrada en un activo especifico</div>
+    <div class="hot-cars-grid" id="hotCarsGrid"></div>
+    <div class="hot-note">
+      La patente <strong>lyhv19 (Chevrolet Silverado)</strong> acumula 13 citas — revisar disponibilidad, precio y estado del vehiculo. Alta demanda puede indicar precio bajo o perfil de auto muy buscado en el mercado.
+    </div>
+  </div>
+
+</div>
+
+<footer>Dashboard Citas de Venta · Autos Usados · Canal Digital 2026</footer>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA EMBEBIDA
+// ─────────────────────────────────────────────
+const MONTHLY = {
+  labels: ['Ene 2026', 'Feb 2026', 'Mar 2026', 'Abr 2026'],
+  sqlVolume: [40, 45, 29, 23],
+  pctConversion: [13.4, 10.0, 10.5, 10.8]
+};
+
+const STATES = {
+  labels: ['Autocancelada', 'No asiste', 'Cancelada', 'Reservado', 'Completada'],
+  values: [42.1, 23.8, 13.3, 13.3, 7.4],
+  colors: ['#DC2626', '#F97316', '#EAB308', '#94A3B8', '#16A34A']
+};
+
+const BRANCHES = [
+  { name: 'TEMUCO LAS BANDERAS',     citas: 11, pct: 36.4 },
+  { name: 'TALCA SAN MIGUEL',        citas: 10, pct: 30.0 },
+  { name: 'VALDIVIA PICARTE',        citas:  8, pct: 25.0 },
+  { name: 'LA DEHESA',               citas: 25, pct: 24.0 },
+  { name: 'CLÍNICA',                 citas: 21, pct: 23.8 },
+  { name: 'ALEMANIA',                citas: 13, pct: 23.1 },
+  { name: 'SAN BERNARDO',            citas: 10, pct: 20.0 },
+  { name: 'PAJARITOS',               citas: 11, pct: 18.2 },
+  { name: 'TEMUCO CAUPOLICÁN',       citas: 28, pct: 17.9 },
+  { name: 'VITACURA 5555',           citas: 12, pct: 16.7 },
+  { name: 'VITACURA ANDES',          citas: 26, pct: 15.4 },
+  { name: 'LAS CONDES',              citas: 14, pct: 14.3 },
+  { name: 'IRARRAZAVAL',             citas: 27, pct: 14.8 },
+  { name: 'MALL PLAZA OESTE',        citas: 75, pct: 13.3 },
+  { name: 'SAN FELIPE',              citas: 15, pct: 13.3 },
+  { name: 'CARSHOPPING',             citas: 32, pct: 12.5 },
+  { name: 'VEGA',                    citas: 32, pct: 12.5 },
+  { name: 'MALL PLAZA NORTE',        citas:  9, pct: 11.1 },
+  { name: 'CHICUREO',                citas: 30, pct: 10.0 },
+  { name: 'LOS ANGELES INDUSTRIAS',  citas: 10, pct: 10.0 },
+  { name: 'PAICAVÍ',                 citas: 33, pct:  9.1 },
+  { name: 'PRAT',                    citas: 33, pct:  9.1 },
+  { name: 'MALL ARAUCO MAIPÚ',       citas: 11, pct:  9.1 },
+  { name: 'MOVICENTER',              citas: 46, pct:  8.7 },
+  { name: 'COLÓN',                   citas: 23, pct:  8.7 },
+  { name: 'CONCEPCIÓN',              citas: 35, pct:  8.6 },
+  { name: 'CERRILLOS',               citas: 41, pct:  7.3 },
+  { name: 'AUTOPARK DEPARTAMENTAL',  citas: 31, pct:  6.5 },
+  { name: 'VICUÑA',                  citas: 36, pct:  5.6 },
+  { name: 'JOSE ALCADE DELANO',      citas: 25, pct:  4.0 },
+  { name: 'VITACURA',                citas: 66, pct:  3.0 }
+];
+
+const HOT_CARS = [
+  { patente: 'LYHV19', marca: 'Chevrolet', modelo: 'Silverado',      citas: 13, alert: true  },
+  { patente: 'TFJG98', marca: 'Mitsubishi', modelo: 'Katana 4x4',    citas:  4, alert: false },
+  { patente: 'BFRT25', marca: '—',          modelo: 'Sin información',citas:  4, alert: false },
+  { patente: 'PZRY30', marca: 'Chevrolet',  modelo: 'Captiva',        citas:  3, alert: false },
+  { patente: 'AAAA11', marca: 'Mazda',      modelo: 'MX-5',           citas:  3, alert: false },
+  { patente: 'VJCL71', marca: 'Chevrolet',  modelo: 'Silverado',      citas:  3, alert: false },
+  { patente: 'PKTC31', marca: 'Suzuki',     modelo: 'Swift',          citas:  3, alert: false },
+  { patente: 'JZDZ73', marca: 'Nissan',     modelo: 'March',          citas:  3, alert: false },
+  { patente: 'KBYW46', marca: 'Kia',        modelo: 'Rio 5',          citas:  3, alert: false }
+];
+
+// ─────────────────────────────────────────────
+// GRAFICO MENSUAL
+// ─────────────────────────────────────────────
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels: MONTHLY.labels,
+    datasets: [
+      {
+        type: 'bar',
+        label: '# Ventas con cita',
+        data: MONTHLY.sqlVolume,
+        backgroundColor: '#14532D',
+        borderRadius: 6,
+        yAxisID: 'y'
+      },
+      {
+        type: 'line',
+        label: '% Conversión cita → venta',
+        data: MONTHLY.pctConversion,
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249,115,22,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#F97316',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        tension: 0.35,
+        fill: true,
+        yAxisID: 'y1'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { font: { size: 11 }, boxWidth: 12, padding: 16 }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.datasetIndex === 0
+            ? ` ${ctx.raw} ventas con cita`
+            : ` ${ctx.raw}% conversión`
+        }
+      }
+    },
+    scales: {
+      y: {
+        type: 'linear', position: 'left', beginAtZero: true,
+        grid: { color: '#F1F5F9' },
+        ticks: { font: { size: 11 } },
+        title: { display: true, text: 'Ventas', font: { size: 10 }, color: '#94A3B8' }
+      },
+      y1: {
+        type: 'linear', position: 'right', beginAtZero: true, max: 20,
+        grid: { drawOnChartArea: false },
+        ticks: { callback: v => v + '%', font: { size: 11 } },
+        title: { display: true, text: '% Conversión', font: { size: 10 }, color: '#94A3B8' }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// GRAFICO DONUT ESTADOS
+// ─────────────────────────────────────────────
+new Chart(document.getElementById('statesChart'), {
+  type: 'doughnut',
+  data: {
+    labels: STATES.labels,
+    datasets: [{
+      data: STATES.values,
+      backgroundColor: STATES.colors,
+      borderWidth: 3,
+      borderColor: '#fff',
+      hoverBorderWidth: 3
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '66%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// TABLA DE SUCURSALES
+// ─────────────────────────────────────────────
+const tbody = document.getElementById('branchTableBody');
+const maxPct = Math.max(...BRANCHES.map(b => b.pct));
+BRANCHES.forEach(b => {
+  const level = b.pct >= 20 ? 'high' : b.pct >= 10 ? 'med' : 'low';
+  const chipClass = level === 'high' ? 'chip-high' : level === 'med' ? 'chip-med' : 'chip-low';
+  const chipLabel = level === 'high' ? 'Alto' : level === 'med' ? 'Medio' : 'Bajo';
+  const barColor = level === 'high' ? '#16A34A' : level === 'med' ? '#CA8A04' : '#EF4444';
+  const barWidth = Math.round((b.pct / maxPct) * 100);
+  tbody.innerHTML += `
+    <tr>
+      <td class="td-name">${b.name}</td>
+      <td class="td-num">${b.citas}</td>
+      <td class="td-pct" style="color:${barColor}">${b.pct.toFixed(1)}%</td>
+      <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${barWidth}%;background:${barColor}"></div></div></td>
+      <td><span class="chip ${chipClass}">${chipLabel}</span></td>
+    </tr>`;
+});
+
+// ─────────────────────────────────────────────
+// AUTOS MAS DEMANDADOS
+// ─────────────────────────────────────────────
+const grid = document.getElementById('hotCarsGrid');
+HOT_CARS.forEach(c => {
+  grid.innerHTML += `
+    <div class="hot-car ${c.alert ? 'hot' : ''}">
+      <div class="hc-left">
+        <div class="patente">${c.patente}</div>
+        <div class="auto-info">${c.marca} ${c.modelo}</div>
+      </div>
+      <div class="hc-badge ${c.alert ? 'alert' : 'normal'}">${c.citas}</div>
+    </div>`;
+});
+</script>
+</body>
+</html>
