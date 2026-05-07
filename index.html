@@ -305,6 +305,14 @@
     <canvas id="statesEvolutionChart" height="180"></canvas>
   </div>
 
+  <!-- TOP 10 SUCURSALES — TASA COMPLETADAS -->
+  <div class="card">
+    <div class="card-title">Top 10 Sucursales — Tasa de Citas Completadas</div>
+    <div class="card-subtitle">% de citas en estado "Completada" sobre el total de citas de la sucursal · enero–abril 2026 · línea punteada = promedio red</div>
+    <div id="top10Filters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;"></div>
+    <canvas id="top10Chart" height="160"></canvas>
+  </div>
+
   <!-- HOT CARS -->
   <div class="card">
     <div class="card-title">Autos Mas Demandados — Alta frecuencia de citas por patente</div>
@@ -377,6 +385,23 @@ const MONTHLY_STATES = {
     { label: 'Cancelada',     color: '#EAB308', data: [ 47,  50,  40,  30] },
     { label: 'Reservado',     color: '#94A3B8', data: [ 47,  50,  40,  30] },
     { label: 'Completada',    color: '#16A34A', data: [ 25,  30,  23,  16] }
+  ]
+};
+
+const TOP10_COMPLETION = {
+  labels: ['Ene 2026', 'Feb 2026', 'Mar 2026', 'Abr 2026'],
+  promedio: [7.1, 7.9, 7.7, 7.0],
+  branches: [
+    { name: 'TEMUCO LAS BANDERAS', color: '#14532D', data: [18.2, 21.4, 17.3, 16.5] },
+    { name: 'TALCA SAN MIGUEL',    color: '#1D4ED8', data: [15.0, 17.0, 14.5, 13.8] },
+    { name: 'VALDIVIA PICARTE',    color: '#7C3AED', data: [12.5, 14.2, 13.5, 12.0] },
+    { name: 'LA DEHESA',           color: '#BE185D', data: [11.8, 13.5, 12.2, 11.0] },
+    { name: 'CLÍNICA',             color: '#0891B2', data: [10.5, 12.3, 11.0, 10.2] },
+    { name: 'ALEMANIA',            color: '#D97706', data: [ 9.8, 11.2, 10.5,  9.4] },
+    { name: 'SAN BERNARDO',        color: '#DC2626', data: [ 9.5, 10.8,  9.8,  8.8] },
+    { name: 'PAJARITOS',           color: '#059669', data: [ 8.8, 10.2,  9.5,  8.2] },
+    { name: 'TEMUCO CAUPOLICÁN',   color: '#EA580C', data: [ 8.5,  9.8,  8.8,  8.0] },
+    { name: 'VITACURA 5555',       color: '#6D28D9', data: [ 8.2,  9.2,  8.5,  7.8] }
   ]
 };
 
@@ -570,6 +595,82 @@ MONTHLY_STATES.series.forEach((s, idx) => {
     btn.dataset.active = String(!isActive);
   });
   filtersContainer.appendChild(btn);
+});
+
+// ─────────────────────────────────────────────
+// TOP 10 SUCURSALES — TASA COMPLETADAS
+// ─────────────────────────────────────────────
+const top10Datasets = [
+  {
+    label: 'Promedio red',
+    data: TOP10_COMPLETION.promedio,
+    borderColor: '#94A3B8',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    tension: 0.35,
+    order: 99
+  },
+  ...TOP10_COMPLETION.branches.map(b => ({
+    label: b.name,
+    data: b.data,
+    borderColor: b.color,
+    backgroundColor: b.color + '18',
+    borderWidth: 2,
+    pointBackgroundColor: b.color,
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    pointRadius: 5,
+    tension: 0.35,
+    fill: false
+  }))
+];
+
+const top10Chart = new Chart(document.getElementById('top10Chart'), {
+  type: 'line',
+  data: { labels: TOP10_COMPLETION.labels, datasets: top10Datasets },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%`
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#F1F5F9' },
+        ticks: { callback: v => v + '%', font: { size: 11 } },
+        title: { display: true, text: '% Completadas', font: { size: 10 }, color: '#94A3B8' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 } }
+      }
+    }
+  }
+});
+
+// Botones toggle por sucursal (omite el dataset de promedio, idx 0)
+const top10FiltersContainer = document.getElementById('top10Filters');
+TOP10_COMPLETION.branches.forEach((b, i) => {
+  const btn = document.createElement('button');
+  btn.textContent = b.name;
+  btn.style.cssText = `padding:4px 14px;border-radius:20px;border:2px solid ${b.color};background:${b.color};color:#fff;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.15s,color 0.15s;`;
+  btn.dataset.active = 'true';
+  btn.addEventListener('click', () => {
+    const isActive = btn.dataset.active === 'true';
+    const dsIdx = i + 1; // +1 porque idx 0 es el promedio
+    if (isActive) { top10Chart.hide(dsIdx); btn.style.background = '#fff'; btn.style.color = b.color; }
+    else          { top10Chart.show(dsIdx); btn.style.background = b.color; btn.style.color = '#fff'; }
+    btn.dataset.active = String(!isActive);
+  });
+  top10FiltersContainer.appendChild(btn);
 });
 
 // ─────────────────────────────────────────────
