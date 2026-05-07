@@ -295,6 +295,14 @@
     </div>
   </div>
 
+  <!-- EVOLUTIVO ESTADOS DE CITA -->
+  <div class="card">
+    <div class="card-title">Evolutivo Mensual — Estados de la Cita</div>
+    <div class="card-subtitle">Volumen de citas por estado · enero–abril 2026</div>
+    <div id="stateFilters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;"></div>
+    <canvas id="statesEvolutionChart" height="180"></canvas>
+  </div>
+
   <!-- HOT CARS -->
   <div class="card">
     <div class="card-title">Autos Mas Demandados — Alta frecuencia de citas por patente</div>
@@ -358,6 +366,17 @@ const BRANCHES = [
   { name: 'JOSE ALCADE DELANO',      citas: 25, pct:  4.0 },
   { name: 'VITACURA',                citas: 66, pct:  3.0 }
 ];
+
+const MONTHLY_STATES = {
+  labels: ['Ene 2026', 'Feb 2026', 'Mar 2026', 'Abr 2026'],
+  series: [
+    { label: 'Autocancelada', color: '#DC2626', data: [148, 160, 126,  96] },
+    { label: 'No asiste',     color: '#F97316', data: [ 83,  90,  71,  55] },
+    { label: 'Cancelada',     color: '#EAB308', data: [ 47,  50,  40,  30] },
+    { label: 'Reservado',     color: '#94A3B8', data: [ 47,  50,  40,  30] },
+    { label: 'Completada',    color: '#16A34A', data: [ 25,  30,  23,  16] }
+  ]
+};
 
 const HOT_CARS = [
   { patente: 'LYHV19', marca: 'Chevrolet', modelo: 'Silverado',      citas: 13, alert: true  },
@@ -483,6 +502,72 @@ BRANCHES.forEach(b => {
       <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${barWidth}%;background:${barColor}"></div></div></td>
       <td><span class="chip ${chipClass}">${chipLabel}</span></td>
     </tr>`;
+});
+
+// ─────────────────────────────────────────────
+// EVOLUTIVO ESTADOS DE CITA
+// ─────────────────────────────────────────────
+const statesEvolutionChart = new Chart(document.getElementById('statesEvolutionChart'), {
+  type: 'bar',
+  data: {
+    labels: MONTHLY_STATES.labels,
+    datasets: MONTHLY_STATES.series.map(s => ({
+      label: s.label,
+      data: s.data,
+      backgroundColor: s.color,
+      borderRadius: 4,
+      stack: 'estados'
+    }))
+  },
+  options: {
+    responsive: true,
+    indexAxis: 'y',
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} citas`
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: { color: '#F1F5F9' },
+        ticks: { font: { size: 11 } },
+        title: { display: true, text: 'N° de citas', font: { size: 10 }, color: '#94A3B8' }
+      },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { font: { size: 11 } }
+      }
+    }
+  }
+});
+
+// Botones toggle por estado
+const filtersContainer = document.getElementById('stateFilters');
+MONTHLY_STATES.series.forEach((s, idx) => {
+  const btn = document.createElement('button');
+  btn.textContent = s.label;
+  btn.style.cssText = `padding:5px 16px;border-radius:20px;border:2px solid ${s.color};background:${s.color};color:#fff;font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.15s,color 0.15s;`;
+  btn.dataset.active = 'true';
+  btn.addEventListener('click', () => {
+    const isActive = btn.dataset.active === 'true';
+    if (isActive) {
+      statesEvolutionChart.hide(idx);
+      btn.style.background = '#fff';
+      btn.style.color = s.color;
+    } else {
+      statesEvolutionChart.show(idx);
+      btn.style.background = s.color;
+      btn.style.color = '#fff';
+    }
+    btn.dataset.active = String(!isActive);
+  });
+  filtersContainer.appendChild(btn);
 });
 
 // ─────────────────────────────────────────────
