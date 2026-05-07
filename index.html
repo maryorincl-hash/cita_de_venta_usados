@@ -108,6 +108,8 @@
     .hc-badge.normal { background: #DCFCE7; color: #14532D; }
     .hc-badge.alert  { background: #F97316; color: white; }
     .hot-note { margin-top: 14px; font-size: 0.75rem; color: #7C2D12; background: #FFF7ED; border-radius: 8px; padding: 8px 12px; border-left: 3px solid #F97316; }
+    @keyframes tituleo { 0%,100% { border-color:#F97316; box-shadow:0 0 0 rgba(249,115,22,0); } 50% { border-color:#ea580c; box-shadow:0 0 10px 3px rgba(249,115,22,0.55); } }
+    .hot-car.top3 { animation: tituleo 1s ease-in-out infinite; }
 
     /* FOOTER */
     footer { text-align: center; padding: 20px; font-size: 0.72rem; color: #94A3B8; }
@@ -574,9 +576,10 @@ MONTHLY_STATES.series.forEach((s, idx) => {
 // AUTOS MAS DEMANDADOS
 // ─────────────────────────────────────────────
 const grid = document.getElementById('hotCarsGrid');
-HOT_CARS.forEach(c => {
+HOT_CARS.forEach((c, i) => {
+  const classes = ['hot-car', c.alert ? 'hot' : '', i < 3 ? 'top3' : ''].filter(Boolean).join(' ');
   grid.innerHTML += `
-    <div class="hot-car ${c.alert ? 'hot' : ''}">
+    <div class="${classes}">
       <div class="hc-left">
         <div class="patente">${c.patente}</div>
         <div class="auto-info">${c.marca} ${c.modelo}</div>
